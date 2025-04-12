@@ -3,6 +3,10 @@ import { Trophy, Play } from 'lucide-react';
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+  .snake-head {
+    transform: scale(1.2); /* Slightly larger head */
+    z-index: 10; /* Ensure head is on top */
+  }
 `;
 
 // Types
@@ -33,19 +37,17 @@ const generateObstacles = (count: number): Position[] => {
 };
 
 const DIFFICULTY_LEVELS: Record<DifficultyLevel, DifficultySettings> = {
-  1: { gridSize: 20, speed: 250, obstacles: [] },
-  2: { gridSize: 25, speed: 200, obstacles: [] },
-  3: { gridSize: 30, speed: 150, obstacles: generateObstacles(5) },
-  4: { gridSize: 35, speed: 120, obstacles: generateObstacles(10) },
+  1: { gridSize: 20, speed: 150, obstacles: [] },
+  2: { gridSize: 25, speed: 120, obstacles: [] },
+  3: { gridSize: 30, speed: 100, obstacles: generateObstacles(5) },
+  4: { gridSize: 35, speed: 90, obstacles: generateObstacles(10) },
   5: { gridSize: 40, speed: 80, obstacles: generateObstacles(15) },
 };
 
 function App() {
   const [level, setLevel] = useState<DifficultyLevel>(1);
   const { gridSize, speed, obstacles: initialObstacles } = DIFFICULTY_LEVELS[level];
-  
-  // Tính toán cellSize dựa trên chiều rộng màn hình
-  const [cellSize, setCellSize] = useState(22); // Giá trị mặc định
+  const [cellSize, setCellSize] = useState(22);
   const INITIAL_SNAKE: Position[] = [{ x: Math.floor(gridSize / 2), y: Math.floor(gridSize / 2) }];
 
   const [snake, setSnake] = useState<Position[]>(INITIAL_SNAKE);
@@ -56,11 +58,11 @@ function App() {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
 
-  // Điều chỉnh cellSize theo kích thước màn hình
+  // Adjust cellSize based on screen width
   useEffect(() => {
     const updateCellSize = () => {
       const screenWidth = window.innerWidth;
-      const maxBoardSize = Math.min(screenWidth - 20, 600); // Giới hạn tối đa 600px
+      const maxBoardSize = Math.min(screenWidth - 20, 600);
       const newCellSize = Math.floor(maxBoardSize / gridSize);
       setCellSize(newCellSize);
     };
@@ -81,6 +83,7 @@ function App() {
       : newFood;
   }, [snake, obstacles, gridSize]);
 
+  // Handle keyboard input
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (gameStatus !== 'PLAYING') return;
@@ -88,8 +91,9 @@ function App() {
     };
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [direction, gameStatus]);
+  }, [gameStatus, direction]);
 
+  // Game loop
   useEffect(() => {
     if (gameStatus !== 'PLAYING') return;
 
@@ -147,27 +151,31 @@ function App() {
   };
 
   const updateDirection = (key: string) => {
+    let newDirection: Direction | null = null;
     switch (key) {
       case 'ArrowUp':
       case 'w':
       case 'W':
-        if (direction !== 'DOWN') setDirection('UP');
+        if (direction !== 'DOWN' && direction !== 'UP') newDirection = 'UP';
         break;
       case 'ArrowDown':
       case 's':
       case 'S':
-        if (direction !== 'UP') setDirection('DOWN');
+        if (direction !== 'UP' && direction !== 'DOWN') newDirection = 'DOWN';
         break;
       case 'ArrowLeft':
       case 'a':
       case 'A':
-        if (direction !== 'RIGHT') setDirection('LEFT');
+        if (direction !== 'RIGHT' && direction !== 'LEFT') newDirection = 'LEFT';
         break;
       case 'ArrowRight':
       case 'd':
       case 'D':
-        if (direction !== 'LEFT') setDirection('RIGHT');
+        if (direction !== 'LEFT' && direction !== 'RIGHT') newDirection = 'RIGHT';
         break;
+    }
+    if (newDirection) {
+      setDirection(newDirection);
     }
   };
 
@@ -215,9 +223,9 @@ function App() {
           {snake.map((segment, index) => (
             <div
               key={index}
-              className={`absolute rounded-full transition-all duration-100 ease-in-out ${
+              className={`absolute rounded-full ${
                 index === 0
-                  ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-[0_0_8px_rgba(16,185,129,0.8)] border border-emerald-400/50'
+                  ? 'snake-head bg-gradient-to-br from-lime-400 to-green-600 shadow-[0_0_12px_rgba(132,204,22,0.9)] border border-lime-300/50'
                   : 'bg-gradient-to-br from-emerald-400 to-teal-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]'
               }`}
               style={{
@@ -225,7 +233,7 @@ function App() {
                 height: cellSize - 2,
                 left: segment.x * cellSize,
                 top: segment.y * cellSize,
-                transform: 'translate(1px, 1px)',
+                transform: index === 0 ? 'translate(1px, 1px) scale(1.2)' : 'translate(1px, 1px)',
               }}
             />
           ))}
